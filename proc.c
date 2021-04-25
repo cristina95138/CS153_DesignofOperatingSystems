@@ -445,7 +445,7 @@ waitpid(int pid, int* status, int options) {
                         return pid;
                     }
                 }
-                sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+                sleep(p, &ptable.lock);  //DOC: wait-sleep
             }
         }
 }
