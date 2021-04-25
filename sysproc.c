@@ -95,3 +95,21 @@ sys_hello(void) {
     hello();
     return 0;
 }
+
+int
+sys_exitSt(void) {
+    //todo
+    return 0;
+}
+
+int
+sys_waitSt(void) {
+    //todo
+    return 0;
+}
+
+int
+sys_waitpid(void) {
+    //todo
+    return 0;
+}
