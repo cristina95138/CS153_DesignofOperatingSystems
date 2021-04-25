@@ -98,18 +98,40 @@ sys_hello(void) {
 
 int
 sys_exitSt(void) {
-    //todo
+    int exitStatus;
+
+    if (argint(0, &exitStatus) < 0)
+        return -1;
+
+    exitSt(exitStatus);
+
     return 0;
 }
 
 int
 sys_waitSt(void) {
-    //todo
-    return 0;
+    int* exitStatus;
+
+    if (argptr(0, (char**)&exitStatus, sizeof(int*) < 0))
+        return -1;
+
+    return waitSt(exitStatus);
 }
 
 int
 sys_waitpid(void) {
-    //todo
-    return 0;
+    int pid;
+    int* exitStatus;
+    int options;
+
+    if (argint(0, &pid) < 0)
+        return -1;
+
+    if (argptr(1, (char**)&exitStatus, sizeof(int*) < 0))
+        return -1;
+
+    if (argint(2, &options) < 0)
+        return -1;
+
+    return waitpid(pid, exitStatus, options);
 }
