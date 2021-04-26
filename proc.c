@@ -407,7 +407,6 @@ waitSt(int* status)
 int
 waitpid(int pid, int* status, int options) {
 
-    struct proc *curproc = myproc();
     struct proc *p;
     int found = 0;
 
