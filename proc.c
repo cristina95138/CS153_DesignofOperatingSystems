@@ -382,6 +382,9 @@ waitSt(int* status)
                 p->name[0] = 0;
                 p->killed = 0;
                 p->state = UNUSED;
+                if (status) {
+                    *status = -1;
+                }
                 release(&ptable.lock);
                 return pid;
             }
@@ -390,6 +393,9 @@ waitSt(int* status)
         // No point waiting if we don't have any children.
         if(!havekids || curproc->killed){
             release(&ptable.lock);
+            if (status) {
+                *status = -1;
+            }
             return -1;
         }
 
@@ -400,7 +406,7 @@ waitSt(int* status)
 
 int
 waitpid(int pid, int* status, int options) {
-    //todo
+
     struct proc *p;
     int found = 0;
 
