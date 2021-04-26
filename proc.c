@@ -383,7 +383,7 @@ waitSt(int* status)
                 p->killed = 0;
                 p->state = UNUSED;
                 if (status) {
-                    *status = -1;
+                    *status = p->exitStatus;
                 }
                 release(&ptable.lock);
                 return pid;
@@ -407,6 +407,7 @@ waitSt(int* status)
 int
 waitpid(int pid, int* status, int options) {
 
+    struct proc *curproc = myproc();
     struct proc *p;
     int found = 0;
 
@@ -427,33 +428,33 @@ waitpid(int pid, int* status, int options) {
         }
         return -1;
     } else {
-            for (;;) {
-                if (p->state == ZOMBIE) {
-                    // Found one.
-                    pid = p->pid;
-                    kfree(p->kstack);
-                    p->kstack = 0;
-                    freevm(p->pgdir);
-                    p->pid = 0;
-                    p->parent = 0;
-                    p->name[0] = 0;
-                    p->killed = 0;
-                    p->state = UNUSED;
-                    if (status) {
-                        *status = p->exitStatus;
-                    }
-                    release(&ptable.lock);
-                    return pid;
-                } else if (p->state == UNUSED) {
-                    if (status) {
-                        *status = p->exitStatus;
-                        release(&ptable.lock);
-                        return pid;
-                    }
+        for (;;) {
+            if (p->state == ZOMBIE) {
+                // Found one.
+                pid = p->pid;
+                kfree(p->kstack);
+                p->kstack = 0;
+                freevm(p->pgdir);
+                p->pid = 0;
+                p->parent = 0;
+                p->name[0] = 0;
+                p->killed = 0;
+                p->state = UNUSED;
+                if (status) {
+                    *status = p->exitStatus;
                 }
-                sleep(p, &ptable.lock);  //DOC: wait-sleep
+                release(&ptable.lock);
+                return pid;
+            } else if (p->state == UNUSED) {
+                if (status) {
+                    *status = p->exitStatus;
+                }
+                release(&ptable.lock);
+                return pid;
             }
+            sleep(p, &ptable.lock);  //DOC: wait-sleep
         }
+    }
 }
 
 //PAGEBREAK: 42
