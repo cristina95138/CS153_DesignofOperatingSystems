@@ -382,6 +382,9 @@ waitSt(int* status)
                 p->name[0] = 0;
                 p->killed = 0;
                 p->state = UNUSED;
+                if (status) {
+                    *status = -1;
+                }
                 release(&ptable.lock);
                 return pid;
             }
