@@ -427,33 +427,33 @@ waitpid(int pid, int* status, int options) {
         }
         return -1;
     } else {
-            for (;;) {
-                if (p->state == ZOMBIE) {
-                    // Found one.
-                    pid = p->pid;
-                    kfree(p->kstack);
-                    p->kstack = 0;
-                    freevm(p->pgdir);
-                    p->pid = 0;
-                    p->parent = 0;
-                    p->name[0] = 0;
-                    p->killed = 0;
-                    p->state = UNUSED;
-                    if (status) {
-                        *status = p->exitStatus;
-                    }
+        for (;;) {
+            if (p->state == ZOMBIE) {
+                // Found one.
+                pid = p->pid;
+                kfree(p->kstack);
+                p->kstack = 0;
+                freevm(p->pgdir);
+                p->pid = 0;
+                p->parent = 0;
+                p->name[0] = 0;
+                p->killed = 0;
+                p->state = UNUSED;
+                if (status) {
+                    *status = p->exitStatus;
+                }
+                release(&ptable.lock);
+                return pid;
+            } else if (p->state == UNUSED) {
+                if (status) {
+                    *status = p->exitStatus;
                     release(&ptable.lock);
                     return pid;
-                } else if (p->state == UNUSED) {
-                    if (status) {
-                        *status = p->exitStatus;
-                        release(&ptable.lock);
-                        return pid;
-                    }
                 }
-                sleep(p, &ptable.lock);  //DOC: wait-sleep
             }
+            sleep(p, &ptable.lock);  //DOC: wait-sleep
         }
+    }
 }
 
 //PAGEBREAK: 42
