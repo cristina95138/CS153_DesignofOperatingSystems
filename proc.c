@@ -447,9 +447,9 @@ waitpid(int pid, int* status, int options) {
             } else if (p->state == UNUSED) {
                 if (status) {
                     *status = p->exitStatus;
-                    release(&ptable.lock);
-                    return pid;
                 }
+                release(&ptable.lock);
+                return pid;
             }
             sleep(p, &ptable.lock);  //DOC: wait-sleep
         }
