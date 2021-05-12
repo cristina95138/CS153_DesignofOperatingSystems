@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define priorityQueue 1
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -87,6 +89,9 @@ allocproc(void)
 
 found:
   p->state = EMBRYO;
+  p->prior_val = 10;
+  p->T_start = 0;
+  p->T_finish = 0;
   p->pid = nextpid++;
 
   release(&ptable.lock);
@@ -456,6 +461,24 @@ waitpid(int pid, int* status, int options) {
     }
 }
 
+// Set priority value
+// Also make sure it stas within bounds
+void set_prior(int prior_lvl) {
+    struct proc *p = myproc();
+
+    if (prior_lvl >= 0 && prior_lvl <= 31) {
+        p->prior_val = prior_lvl;
+    } else if (prior_lvl < 0 || prior_lvl > 31) {
+        if (prior_lvl < 0) {
+            p->prior_val = 0;
+        } else if (prior_lvl > 31) {
+            p->prior_val = 31;
+        }
+    }
+}
+
+
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -470,6 +493,9 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  struct proc *highest;
+  struct proc *temp;
+  int pTime = 0;
   
   for(;;){
     // Enable interrupts on this processor.
@@ -477,18 +503,43 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+    pTime++;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+        highest = ptable.proc;
+
+        for (temp = ptable.proc; temp < &ptable.proc[NPROC]; temp++) {
+            if(temp->state != RUNNABLE)
+                continue;
+
+            if (temp->prior_val >= highest->prior_val) {
+                if (priorityQueue && highest->prior_val < 31) {
+                    highest->prior_val++;
+                }
+            } else if (priorityQueue && highest->prior_val < 31) {
+                highest->prior_val++;
+            }
+
+            if (temp->T_start == 0) {
+                temp->T_start = pTime;
+            }
+        }
+
+        if (p->state != ZOMBIE) {
+            p->T_finish = pTime;
+        }
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+      c->proc = highest;
+      switchuvm(highest);
+      highest->state = RUNNING;
 
-      swtch(&(c->scheduler), p->context);
+      if (priorityQueue && highest->prior_val > 0) {
+          highest->prior_val--;
+      }
+
+      swtch(&(c->scheduler), highest->context);
       switchkvm();
 
       // Process is done running for now.
