@@ -135,3 +135,13 @@ sys_waitpid(void) {
 
     return waitpid(pid, exitStatus, options);
 }
+
+void
+ sys_setPrior(int prior_level) {
+   return set_prior(prior_level);
+ }
+
+ void
+ sys_trackSched(void) {
+   return track_scheduler();
+ }
