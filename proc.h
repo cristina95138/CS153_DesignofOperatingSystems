@@ -53,6 +53,7 @@ struct proc {
   int prior_val;               // Keeps track of the priority value
   int T_start;                 // Start time of turnaround time
   int T_finish;                // Finish time of turnaround time
+  int T_burst;                 // Run time of process
 };
 
 // Process memory is laid out contiguously, low addresses first:
