@@ -479,7 +479,7 @@ void set_prior(int prior_lvl) {
 
 //track performance of scheduler
 //for purposes of lab2 testbench. need syscall to return the T_burst, T_start, T_finish times of a process because this is kernel level information.
-void track_scheduler() {
+void track_scheduler(void) {
   struct proc *p = myproc();
   cprintf("\n T_start: %d\n T_finish: %d\n T_burst: %d\n Turnaround Time: %d\n Waiting Time: %d\n",
           p->T_start, p->T_finish, p->T_burst, (p->T_finish - p->T_start), (p->T_finish - p->T_start - p->T_burst) );
