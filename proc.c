@@ -477,7 +477,25 @@ void set_prior(int prior_lvl) {
     }
 }
 
-
+//track performance of scheduler
+//for purposes of lab2 testbench. need syscall to return the T_burst, T_start, T_finish times of a process because this is kernel level information.
+void track_scheduler(void) {
+  struct proc *p = myproc();
+  cprintf("\n T_start: %d\n T_finish: %d\n T_burst: %d\n Turnaround Time: %d\n Waiting Time: %d\n",
+          p->T_start, p->T_finish, p->T_burst, (p->T_finish - p->T_start), (p->T_finish - p->T_start - p->T_burst) );
+  if(p->T_start > p->T_finish) {
+    cprintf("\nError calculating process Start and Finish time\n");
+  }
+  if(!p->T_finish) {
+    cprintf("\nError: process '%d' did not finish.\n");
+  }
+  if(p->T_burst > (p->T_finish - p->T_start) ) {
+    cprintf("\nError calculating burst time, burst larger than waiting time.\n");
+  }
+  if( (p->T_finish - p->T_start) < 0) {
+    cprintf("\nError calculating waiting time, negative process waiting time.\n");
+  }
+}
 
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
@@ -521,9 +539,16 @@ scheduler(void)
 
             if (temp->T_start == 0) {
                 temp->T_start = pTime;
+                temp->T_burst = 0;
+                temp->prev_ticks = ticks;
             }
         }
-
+        //update burst time if global ticks is greater than previous ticks.
+        if (ticks > p->prev_ticks) {
+          p->T_burst++;
+          p->prev_ticks = ticks;
+        }
+      
         if (p->state != ZOMBIE) {
             p->T_finish = pTime;
         }

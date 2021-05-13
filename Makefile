@@ -180,6 +180,10 @@ UPROGS=\
 	_stressfs\
 	_test\
 	_lab1\
+	_prog1\
+	_prog2\
+	_prog3\
+	_prog4\
 	_usertests\
 	_wc\
 	_zombie\

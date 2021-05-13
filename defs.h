@@ -125,6 +125,8 @@ void            hello(void);
 void            exitSt(int);
 int             waitSt(int*);
 int             waitpid(int, int*, int);
+void            set_prior(int);
+void            track_scheduler(void);
 
 
 // swtch.S
