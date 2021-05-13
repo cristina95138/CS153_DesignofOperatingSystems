@@ -24,3 +24,5 @@
 #define SYS_exitSt 23
 #define SYS_waitSt 24
 #define SYS_waitpid 25
+#define SYS_setPrior 26
+#define SYS_trackSched 27
