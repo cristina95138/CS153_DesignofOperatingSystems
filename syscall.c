@@ -107,6 +107,8 @@ extern int sys_hello(void);
 extern int sys_exitSt(void);
 extern int sys_waitSt(void);
 extern int sys_waitpid(void);
+extern int sys_setPrior(void);
+extern int sys_trackSched(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -134,6 +136,8 @@ static int (*syscalls[])(void) = {
 [SYS_exitSt]  sys_exitSt,
 [SYS_waitSt]  sys_waitSt,
 [SYS_waitpid] sys_waitpid,
+[SYS_setPrior] sys_setPrior,
+[SYS_trackSched] sys_trackSched,
 };
 
 void

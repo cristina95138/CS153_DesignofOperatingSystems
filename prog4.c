@@ -1,6 +1,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "defs.h"
 
 int main(int argc, char *argv[]) {
         set_prior(7);

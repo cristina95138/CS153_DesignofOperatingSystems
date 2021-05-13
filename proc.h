@@ -54,7 +54,7 @@ struct proc {
   int T_start;                 // Start time of turnaround time
   int T_finish;                // Finish time of turnaround time
   int T_burst;                 // Run time of process
-  int prev_Tick;               // Previous tick (last time T_burst was updated)
+  int prev_ticks;               // Previous tick (last time T_burst was updated)
 };
 
 // Process memory is laid out contiguously, low addresses first:
