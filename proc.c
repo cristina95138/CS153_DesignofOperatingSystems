@@ -535,14 +535,17 @@ scheduler(void)
                 if (priorityQueue && highest->prior_val < 31) {
                     highest->prior_val++;
                 }
-            } else if (priorityQueue && highest->prior_val < 31) {
-                highest->prior_val++;
-            }
+                highest = temp;
+            } else {
+                if (priorityQueue && highest->prior_val < 31) {
+                    highest->prior_val++;
+                }
 
-            if (temp->T_start == 0) {
-                temp->T_start = pTime;
-                temp->T_burst = 0;
-                temp->prev_ticks = ticks;
+                if (temp->T_start == 0) {
+                    temp->T_start = pTime;
+                    temp->T_burst = 0;
+                    temp->prev_ticks = ticks;
+                }
             }
         }
         //update burst time if global ticks is greater than previous ticks.

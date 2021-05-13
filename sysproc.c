@@ -137,21 +137,15 @@ sys_waitpid(void) {
 }
 
 void
- sys_setPrior(int prior_level) {
-   return set_prior(prior_level);
- }
-
- void
- sys_trackSched(void) {
-   return track_scheduler();
- }
-
-void
-sys_setPrior(int prior_level) {
-  return set_prior(prior_level);
+sys_setPrior(void) {
+    int prior;
+    argint(0, &prior);
+    setPrior(prior);
 }
 
 void
 sys_trackSched(void) {
-  return track_scheduler();
+    int sched;
+    argint(0, &sched);
+    trackSched();
 }
