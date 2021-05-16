@@ -3,16 +3,21 @@
 #include "user.h"
 
 int main(int argc, char *argv[]) {
-        set_prior(7);
-        int i, k;
 
+    int pid;
+    pid = fork();
 
-        for(i = 0; i < 10000; i++) {
+    setPrior(7);
+    int i, k;
+
+    if (pid == 0) {
+        for(i = 0; i < 43000; i++) {
+            asm("nop");
+            for(k=0; k < 43000; k++) {
                 asm("nop");
-                for(k=0; k < 10000; k++) {
-                        asm("nop");
-                }
+            }
         }
-  
-        track_scheduler();
+    }
+
+    exit();
 }

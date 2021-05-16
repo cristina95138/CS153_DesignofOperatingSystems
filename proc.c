@@ -92,6 +92,8 @@ found:
   p->prior_val = 10;
   p->T_start = 0;
   p->T_finish = 0;
+  p->T_burst = 0;
+  p->prev_ticks = 0;
   p->pid = nextpid++;
 
   release(&ptable.lock);
@@ -463,7 +465,7 @@ waitpid(int pid, int* status, int options) {
 
 // Set priority value
 // Also make sure it stas within bounds
-void set_prior(int prior_lvl) {
+void setPrior(int prior_lvl) {
     struct proc *p = myproc();
 
     if (prior_lvl >= 0 && prior_lvl <= 31) {
@@ -479,7 +481,7 @@ void set_prior(int prior_lvl) {
 
 //track performance of scheduler
 //for purposes of lab2 testbench. need syscall to return the T_burst, T_start, T_finish times of a process because this is kernel level information.
-void track_scheduler(void) {
+void trackSched(void) {
   struct proc *p = myproc();
   
   
@@ -543,14 +545,17 @@ scheduler(void)
                 if (priorityQueue && highest->prior_val < 31) {
                     highest->prior_val++;
                 }
-            } else if (priorityQueue && highest->prior_val < 31) {
-                highest->prior_val++;
-            }
+                highest = temp;
+            } else {
+                if (priorityQueue && highest->prior_val < 31) {
+                    highest->prior_val++;
+                }
 
-            if (temp->T_start == 0) {
-                temp->T_start = pTime;
-                temp->T_burst = 0;
-                temp->prev_ticks = ticks;
+                if (temp->T_start == 0) {
+                    temp->T_start = pTime;
+                    temp->T_burst = 0;
+                    temp->prev_ticks = ticks;
+                }
             }
         }
         //update burst time if global ticks is greater than previous ticks.
