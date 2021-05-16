@@ -481,8 +481,16 @@ void set_prior(int prior_lvl) {
 //for purposes of lab2 testbench. need syscall to return the T_burst, T_start, T_finish times of a process because this is kernel level information.
 void track_scheduler(void) {
   struct proc *p = myproc();
+  
+  
+  acquire(&ptable.lock);
+  if(!holding(&ptable.lock)) {
+    panic("sched ptable.lock");
+  }
+  
   cprintf("\n T_start: %d\n T_finish: %d\n T_burst: %d\n Turnaround Time: %d\n Waiting Time: %d\n",
           p->T_start, p->T_finish, p->T_burst, (p->T_finish - p->T_start), (p->T_finish - p->T_start - p->T_burst) );
+          
   if(p->T_start > p->T_finish) {
     cprintf("\nError calculating process Start and Finish time\n");
   }
@@ -495,6 +503,8 @@ void track_scheduler(void) {
   if( (p->T_finish - p->T_start) < 0) {
     cprintf("\nError calculating waiting time, negative process waiting time.\n");
   }
+  
+  release(&ptable.lock);
 }
 
 //PAGEBREAK: 42
