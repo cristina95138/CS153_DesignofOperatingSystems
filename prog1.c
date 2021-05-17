@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
                 asm("nop");
             }
         }
-        printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 1);
+        printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 1, trackSched());
         exit();
     } else {
         printf(1, "Error\n");
