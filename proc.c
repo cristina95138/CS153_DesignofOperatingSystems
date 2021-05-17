@@ -483,8 +483,6 @@ void setPrior(int prior_lvl) {
 //for purposes of lab2 testbench. need syscall to return the T_burst, T_start, T_finish times of a process because this is kernel level information.
 void trackSched(void) {
   struct proc *p = myproc();
-  cprintf("\n T_start: %d\n T_finish: %d\n T_burst: %d\n Turnaround Time: %d\n Waiting Time: %d\n",
-          p->T_start, p->T_finish, p->T_burst, (p->T_finish - p->T_start), (p->T_finish - p->T_start - p->T_burst) );
   if(p->T_start > p->T_finish) {
     cprintf("\nError calculating process Start and Finish time\n");
   }
@@ -497,6 +495,9 @@ void trackSched(void) {
   if( (p->T_finish - p->T_start) < 0) {
     cprintf("\nError calculating waiting time, negative process waiting time.\n");
   }
+
+  cprintf("\n T_start: %d\n T_finish: %d\n T_burst: %d\n Turnaround Time: %d\n Waiting Time: %d\n",
+            p->T_start, p->T_finish, p->T_burst, (p->T_finish - p->T_start), (p->T_finish - p->T_start - p->T_burst) );
 }
 
 //PAGEBREAK: 42
@@ -516,6 +517,7 @@ scheduler(void)
   struct proc *highest;
   struct proc *temp;
   int pTime = 0;
+
   
   for(;;){
     // Enable interrupts on this processor.
@@ -531,7 +533,7 @@ scheduler(void)
             if(temp->state != RUNNABLE)
                 continue;
 
-            if (temp->prior_val >= highest->prior_val) {
+            if (temp->prior_val <= highest->prior_val) {
                 if (priorityQueue && highest->prior_val < 31) {
                     highest->prior_val++;
                 }
