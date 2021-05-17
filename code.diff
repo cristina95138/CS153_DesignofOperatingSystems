@@ -1,0 +1,496 @@
+diff --git a/Makefile b/Makefile
+index 89df120..1abff70 100644
+--- a/Makefile
++++ b/Makefile
+@@ -180,6 +180,11 @@ UPROGS=\
+ 	_stressfs\
+ 	_test\
+ 	_lab1\
++	_lab2\
++	_prog1\
++	_prog2\
++	_prog3\
++	_prog4\
+ 	_usertests\
+ 	_wc\
+ 	_zombie\
+@@ -219,7 +224,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+ 	then echo "-gdb tcp::$(GDBPORT)"; \
+ 	else echo "-s -p $(GDBPORT)"; fi)
+ ifndef CPUS
+-CPUS := 2
++CPUS := 1
+ endif
+ QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
+ 
+@@ -252,6 +257,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
+ EXTRA=\
+ 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
+ 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
++	test.c lab1.c lab2.c prog1.c prog2.c prog3.c prog4.c\
+ 	printf.c umalloc.c\
+ 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+ 	.gdbinit.tmpl gdbutil\
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..5245fec
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1 @@
++# CS153_DesignofOperatingSystems
+\ No newline at end of file
+diff --git a/defs.h b/defs.h
+index b5719c4..718ce97 100644
+--- a/defs.h
++++ b/defs.h
+@@ -125,6 +125,8 @@ void            hello(void);
+ void            exitSt(int);
+ int             waitSt(int*);
+ int             waitpid(int, int*, int);
++void            setPrior(int);
++void            trackSched(void);
+ 
+ 
+ // swtch.S
+diff --git a/lab1.c b/lab1.c
+index d0e2055..7e36613 100644
+--- a/lab1.c
++++ b/lab1.c
+@@ -8,6 +8,9 @@ int exitStatus;
+ int waitPidStatus = 1;
+ 
+ int main(int argc, char *argv[]) {
++
++    printf(1, "lab1\n");
++
+     int i = 0;
+ 
+     for (i = 0; i < 2; ++i) {
+diff --git a/lab2.c b/lab2.c
+new file mode 100644
+index 0000000..7ee640a
+--- /dev/null
++++ b/lab2.c
+@@ -0,0 +1,42 @@
++#include "types.h"
++#include "stat.h"
++#include "user.h"
++#include <stddef.h>
++
++int main(int argc, char *argv[]) {
++
++    printf(1, "lab2\n");
++
++    int pid;
++    int i, j, k;
++
++    for (k = 0; k < 3; k++) {
++        pid = fork();
++        setPrior(30-10*k);
++
++        if (pid > 0) {
++            continue;
++        } else if (pid == 0) {
++            for (i = 0; i < 43000; i++) {
++                asm("nop");
++                for (j = 0; j < 43000; j++) {
++                    asm("nop");
++                }
++            }
++            printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 30-10*k, trackSched());
++            exit();
++        } else {
++            printf(1, "Error\n");
++        }
++    }
++
++    if (pid > 0) {
++        for (k = 0; k < 3; k++) {
++            wait();
++        }
++    }
++
++    exit();
++
++    return 0;
++}
+diff --git a/proc.c b/proc.c
+index 7f516e2..d128dbc 100644
+--- a/proc.c
++++ b/proc.c
+@@ -7,7 +7,7 @@
+ #include "proc.h"
+ #include "spinlock.h"
+ 
+-#define priorityQueue 1
++#define priorityQueue 0
+ 
+ struct {
+   struct spinlock lock;
+@@ -92,6 +92,8 @@ found:
+   p->prior_val = 10;
+   p->T_start = 0;
+   p->T_finish = 0;
++  p->T_burst = 0;
++  p->prev_ticks = 0;
+   p->pid = nextpid++;
+ 
+   release(&ptable.lock);
+@@ -463,7 +465,7 @@ waitpid(int pid, int* status, int options) {
+ 
+ // Set priority value
+ // Also make sure it stas within bounds
+-void set_prior(int prior_lvl) {
++void setPrior(int prior_lvl) {
+     struct proc *p = myproc();
+ 
+     if (prior_lvl >= 0 && prior_lvl <= 31) {
+@@ -477,7 +479,26 @@ void set_prior(int prior_lvl) {
+     }
+ }
+ 
++//track performance of scheduler
++//for purposes of lab2 testbench. need syscall to return the T_burst, T_start, T_finish times of a process because this is kernel level information.
++void trackSched(void) {
++  struct proc *p = myproc();
++  if(p->T_start > p->T_finish) {
++    cprintf("\nError calculating process Start and Finish time\n");
++  }
++  if(!p->T_finish) {
++    cprintf("\nError: process '%d' did not finish.\n");
++  }
++  if(p->T_burst > (p->T_finish - p->T_start) ) {
++    cprintf("\nError calculating burst time, burst larger than waiting time.\n");
++  }
++  if( (p->T_finish - p->T_start) < 0) {
++    cprintf("\nError calculating waiting time, negative process waiting time.\n");
++  }
+ 
++  cprintf("\n T_start: %d\n T_finish: %d\n T_burst: %d\n Turnaround Time: %d\n Waiting Time: %d\n",
++            p->T_start, p->T_finish, p->T_burst, (p->T_finish - p->T_start), (p->T_finish - p->T_start - p->T_burst) );
++}
+ 
+ //PAGEBREAK: 42
+ // Per-CPU process scheduler.
+@@ -496,6 +517,7 @@ scheduler(void)
+   struct proc *highest;
+   struct proc *temp;
+   int pTime = 0;
++
+   
+   for(;;){
+     // Enable interrupts on this processor.
+@@ -515,15 +537,25 @@ scheduler(void)
+                 if (priorityQueue && highest->prior_val < 31) {
+                     highest->prior_val++;
+                 }
+-            } else if (priorityQueue && highest->prior_val < 31) {
+-                highest->prior_val++;
+-            }
++                highest = temp;
++            } else {
++                if (priorityQueue && highest->prior_val < 31) {
++                    highest->prior_val++;
++                }
+ 
+-            if (temp->T_start == 0) {
+-                temp->T_start = pTime;
++                if (temp->T_start == 0) {
++                    temp->T_start = pTime;
++                    temp->T_burst = 0;
++                    temp->prev_ticks = ticks;
++                }
+             }
+         }
+-
++        //update burst time if global ticks is greater than previous ticks.
++        if (ticks > p->prev_ticks) {
++          p->T_burst++;
++          p->prev_ticks = ticks;
++        }
++      
+         if (p->state != ZOMBIE) {
+             p->T_finish = pTime;
+         }
+@@ -732,4 +764,4 @@ procdump(void)
+ void
+ hello(void) {
+     cprintf("\n\n Hello from your kernel space! \n\n");
+-}
+\ No newline at end of file
++}
+diff --git a/proc.h b/proc.h
+index 609cc53..766d9cb 100644
+--- a/proc.h
++++ b/proc.h
+@@ -53,6 +53,8 @@ struct proc {
+   int prior_val;               // Keeps track of the priority value
+   int T_start;                 // Start time of turnaround time
+   int T_finish;                // Finish time of turnaround time
++  int T_burst;                 // Run time of process
++  int prev_ticks;               // Previous tick (last time T_burst was updated)
+ };
+ 
+ // Process memory is laid out contiguously, low addresses first:
+diff --git a/prog1.c b/prog1.c
+new file mode 100644
+index 0000000..55c7ee5
+--- /dev/null
++++ b/prog1.c
+@@ -0,0 +1,36 @@
++#include "types.h"
++#include "stat.h"
++#include "user.h"
++#include <stddef.h>
++
++int main(int argc, char *argv[]) {
++
++    printf(1, "lab2,1\n");
++
++    int pid;
++    pid = fork();
++
++    setPrior(1);
++    int i, k;
++
++    if (pid == 0) {
++        for(i = 0; i < 43000; i++) {
++            asm("nop");
++            for(k=0; k < 43000; k++) {
++                asm("nop");
++            }
++        }
++        printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 1, trackSched());
++        exit();
++    } else {
++        printf(1, "Error\n");
++    }
++
++    if (pid > 0) {
++        wait();
++    }
++
++    exit();
++
++    return 0;
++}
+diff --git a/prog2.c b/prog2.c
+new file mode 100644
+index 0000000..14fe207
+--- /dev/null
++++ b/prog2.c
+@@ -0,0 +1,36 @@
++#include "types.h"
++#include "stat.h"
++#include "user.h"
++#include <stddef.h>
++
++int main(int argc, char *argv[]) {
++
++    printf(1, "lab2,2\n");
++
++    int pid;
++    pid = fork();
++
++    setPrior(5);
++    int i, k;
++
++    if (pid == 0) {
++        for(i = 0; i < 43000; i++) {
++            asm("nop");
++            for(k=0; k < 43000; k++) {
++                asm("nop");
++            }
++        }
++        printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 5, trackSched());
++        exit();
++    } else {
++        printf(1, "Error\n");
++    }
++
++    if (pid > 0) {
++        wait();
++    }
++
++    exit();
++
++    return 0;
++}
+diff --git a/prog3.c b/prog3.c
+new file mode 100644
+index 0000000..ab3a816
+--- /dev/null
++++ b/prog3.c
+@@ -0,0 +1,36 @@
++#include "types.h"
++#include "stat.h"
++#include "user.h"
++#include <stddef.h>
++
++int main(int argc, char *argv[]) {
++
++    printf(1, "lab2,3\n");
++
++    int pid;
++    pid = fork();
++
++    setPrior(7);
++    int i, k;
++
++    if (pid == 0) {
++        for(i = 0; i < 43000; i++) {
++            asm("nop");
++            for(k=0; k < 43000; k++) {
++                asm("nop");
++            }
++        }
++        printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 7, trackSched());
++        exit();
++    } else {
++        printf(1, "Error\n");
++    }
++
++    if (pid > 0) {
++        wait();
++    }
++
++    exit();
++
++    return 0;
++}
+diff --git a/prog4.c b/prog4.c
+new file mode 100644
+index 0000000..3bb4869
+--- /dev/null
++++ b/prog4.c
+@@ -0,0 +1,36 @@
++#include "types.h"
++#include "stat.h"
++#include "user.h"
++#include <stddef.h>
++
++int main(int argc, char *argv[]) {
++
++    printf(1, "lab2,4\n");
++
++    int pid;
++    pid = fork();
++
++    setPrior(15);
++    int i, k;
++
++    if (pid == 0) {
++        for(i = 0; i < 43000; i++) {
++            asm("nop");
++            for(k=0; k < 43000; k++) {
++                asm("nop");
++            }
++        }
++        printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 15, trackSched());
++        exit();
++    } else {
++        printf(1, "Error\n");
++    }
++
++    if (pid > 0) {
++        wait();
++    }
++
++    exit();
++
++    return 0;
++}
+diff --git a/syscall.c b/syscall.c
+index d61173f..a6f0225 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -107,6 +107,8 @@ extern int sys_hello(void);
+ extern int sys_exitSt(void);
+ extern int sys_waitSt(void);
+ extern int sys_waitpid(void);
++extern int sys_setPrior(void);
++extern int sys_trackSched(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -134,6 +136,8 @@ static int (*syscalls[])(void) = {
+ [SYS_exitSt]  sys_exitSt,
+ [SYS_waitSt]  sys_waitSt,
+ [SYS_waitpid] sys_waitpid,
++[SYS_setPrior] sys_setPrior,
++[SYS_trackSched] sys_trackSched,
+ };
+ 
+ void
+diff --git a/syscall.h b/syscall.h
+index 79520e1..a809731 100644
+--- a/syscall.h
++++ b/syscall.h
+@@ -24,3 +24,5 @@
+ #define SYS_exitSt 23
+ #define SYS_waitSt 24
+ #define SYS_waitpid 25
++#define SYS_setPrior 26
++#define SYS_trackSched 27
+diff --git a/sysproc.c b/sysproc.c
+index 863676e..2729809 100644
+--- a/sysproc.c
++++ b/sysproc.c
+@@ -134,4 +134,29 @@ sys_waitpid(void) {
+         return -1;
+ 
+     return waitpid(pid, exitStatus, options);
+-}
+\ No newline at end of file
++}
++
++int
++sys_setPrior(void) {
++    int prior;
++
++    if((argint(0, &prior) < 0)) {
++        return -1;
++    }
++
++    setPrior(prior);
++
++    return 0;
++}
++
++int
++sys_trackSched(void) {
++    int sched;
++    if ((argint(0, &sched) < 0)) {
++        return -1;
++    }
++
++    trackSched();
++
++    return 0;
++}
+diff --git a/user.h b/user.h
+index 3e27041..cc28af5 100644
+--- a/user.h
++++ b/user.h
+@@ -27,6 +27,8 @@ int hello(void);
+ int exitSt(int) __attribute__((noreturn));
+ int waitSt(int*);
+ int waitpid(int, int*, int);
++int setPrior(int);
++int trackSched(void);
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+diff --git a/usys.S b/usys.S
+index 1e6db3b..3f8892e 100644
+--- a/usys.S
++++ b/usys.S
+@@ -30,6 +30,8 @@ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
+ SYSCALL(hello)
++SYSCALL(trackSched)
++SYSCALL(setPrior)
+ SYSCALL(exitSt)
+ SYSCALL(waitSt)
+ SYSCALL(waitpid)
