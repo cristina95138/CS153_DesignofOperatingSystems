@@ -7,7 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
-#define priorityQueue 1
+#define priorityQueue 0
 
 struct {
   struct spinlock lock;
@@ -533,7 +533,7 @@ scheduler(void)
             if(temp->state != RUNNABLE)
                 continue;
 
-            if (temp->prior_val <= highest->prior_val) {
+            if (temp->prior_val >= highest->prior_val) {
                 if (priorityQueue && highest->prior_val < 31) {
                     highest->prior_val++;
                 }
