@@ -136,16 +136,27 @@ sys_waitpid(void) {
     return waitpid(pid, exitStatus, options);
 }
 
-void
+int
 sys_setPrior(void) {
     int prior;
-    argint(0, &prior);
+
+    if((argint(0, &prior) < 0)) {
+        return -1;
+    }
+
     setPrior(prior);
+
+    return 0;
 }
 
-void
+int
 sys_trackSched(void) {
     int sched;
-    argint(0, &sched);
+    if ((argint(0, &sched) < 0)) {
+        return -1;
+    }
+
     trackSched();
+
+    return 0;
 }

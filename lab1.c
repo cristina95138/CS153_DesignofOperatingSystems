@@ -8,6 +8,9 @@ int exitStatus;
 int waitPidStatus = 1;
 
 int main(int argc, char *argv[]) {
+
+    printf(1, "lab1\n");
+
     int i = 0;
 
     for (i = 0; i < 2; ++i) {

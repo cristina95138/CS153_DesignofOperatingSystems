@@ -27,8 +27,8 @@ int hello(void);
 int exitSt(int) __attribute__((noreturn));
 int waitSt(int*);
 int waitpid(int, int*, int);
-void setPrior(int);
-void trackSched(void);
+int setPrior(int);
+int trackSched(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

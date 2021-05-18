@@ -1,8 +1,11 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include <stddef.h>
 
 int main(int argc, char *argv[]) {
+
+    printf(1, "lab2,1\n");
 
     int pid;
     pid = fork();
@@ -17,7 +20,17 @@ int main(int argc, char *argv[]) {
                 asm("nop");
             }
         }
+        printf(1, "Child %d that has a priority of %d has finished.\n", getpid(), 1, trackSched());
+        exit();
+    } else {
+        printf(1, "Error\n");
+    }
+
+    if (pid > 0) {
+        wait();
     }
 
     exit();
+
+    return 0;
 }
