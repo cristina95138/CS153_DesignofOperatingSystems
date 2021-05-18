@@ -483,6 +483,10 @@ void setPrior(int prior_lvl) {
 //for purposes of lab2 testbench. need syscall to return the T_burst, T_start, T_finish times of a process because this is kernel level information.
 void trackSched(void) {
   struct proc *p = myproc();
+  
+  if(p == initproc) {
+    panic("init exiting");
+  }
   if(p->T_start > p->T_finish) {
     cprintf("\nError calculating process Start and Finish time\n");
   }
